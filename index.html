@@ -1,0 +1,1836 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>音訊視覺化 - VTuber</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #2c3e50 0%, #34495e 30%, #5d4e75 70%, #8b5a3c 100%);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 0 0 20px 20px;
+      padding: 0 30px 30px 30px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      width: 100%;
+      max-width: 900px;
+    }
+    
+    h1 {
+      color: white;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    #vtuberImage {
+      width: 200px;
+      height: 200px;
+      margin: 0;
+      border-radius: 0px;
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
+      position: relative;
+      top: 0;
+      transform: scaleX(-1);
+      background: black;
+    }
+    
+    #canvas {
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      margin: 20px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+    
+    button {
+      margin: 10px;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 25px;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+    
+    button:disabled {
+      background: rgba(255, 255, 255, 0.1);
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    #startMic {
+      background: rgba(76, 175, 80, 0.7);
+    }
+    
+    #startMic:hover {
+      background: rgba(76, 175, 80, 0.9);
+    }
+    
+    #stopMic {
+      background: rgba(244, 67, 54, 0.7);
+    }
+    
+    #stopMic:hover {
+      background: rgba(244, 67, 54, 0.9);
+    }
+    
+    #testMic {
+      background: rgba(255, 193, 7, 0.7);
+    }
+    
+    #testMic:hover {
+      background: rgba(255, 193, 7, 0.9);
+    }
+    
+    .status {
+      color: white;
+      margin: 20px 10px 10px 10px;
+      font-size: 18px;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+    
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .volume-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+      font-size: 16px;
+    }
+    
+    #volumeSlider {
+      width: 200px;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.3);
+      outline: none;
+    }
+    
+    #volumeSlider::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #4ecdc4;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+    
+    #volumeValue {
+      min-width: 30px;
+      text-align: center;
+      font-weight: bold;
+    }
+    
+    .click-to-start {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 40px;
+      margin: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+    }
+    
+    .click-to-start:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.02);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .click-to-start h2 {
+      color: white;
+      margin: 0 0 10px 0;
+      font-size: 24px;
+    }
+    
+    .click-to-start p {
+      color: rgba(255, 255, 255, 0.8);
+      margin: 0;
+      font-size: 16px;
+    }
+    
+    /* 訓練介面樣式 */
+    .training-section {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .training-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .mouth-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 15px 0;
+    }
+    
+    .mouth-btn {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 20px;
+      background: rgba(78, 205, 196, 0.7);
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      font-weight: bold;
+      user-select: none;
+    }
+    
+    .mouth-btn:hover {
+      background: rgba(78, 205, 196, 0.9);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
+    }
+    
+    .mouth-btn:active {
+      transform: translateY(0);
+      background: rgba(78, 205, 196, 1);
+    }
+    
+    .mouth-btn.pressed {
+      background: rgba(255, 107, 107, 0.9);
+      transform: scale(0.95);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+      animation: pulse 1s infinite;
+    }
+    
+    .mouth-btn.recording {
+      background: rgba(76, 175, 80, 0.8);
+      animation: flash 0.5s ease;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { opacity: 0.8; }
+    }
+    
+    @keyframes flash {
+      0% { background: rgba(76, 175, 80, 0.8); }
+      50% { background: rgba(76, 175, 80, 1); }
+      100% { background: rgba(76, 175, 80, 0.8); }
+    }
+    
+    #toggleTraining {
+      background: rgba(255, 193, 7, 0.7);
+    }
+    
+    #toggleTraining:hover {
+      background: rgba(255, 193, 7, 0.9);
+    }
+    
+    #toggleTraining.training-active {
+      background: rgba(244, 67, 54, 0.7);
+    }
+    
+    #toggleTraining.training-active:hover {
+      background: rgba(244, 67, 54, 0.9);
+    }
+    
+    #saveTrainingData {
+      background: rgba(76, 175, 80, 0.7);
+    }
+    
+    #saveTrainingData:hover {
+      background: rgba(76, 175, 80, 0.9);
+    }
+    
+    #loadTrainingData {
+      background: rgba(156, 39, 176, 0.7);
+    }
+    
+    #loadTrainingData:hover {
+      background: rgba(156, 39, 176, 0.9);
+    }
+    
+    /* 背景設定樣式 */
+    .bg-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .bg-control-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .bg-style-buttons {
+      display: flex;
+      gap: 5px;
+    }
+    
+    .bg-style-btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      user-select: none;
+    }
+    
+    .bg-style-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+    
+    .bg-style-btn.active {
+      background: rgba(78, 205, 196, 0.8);
+      box-shadow: 0 2px 8px rgba(78, 205, 196, 0.3);
+    }
+    
+    .bg-style-btn.active:hover {
+      background: rgba(78, 205, 196, 1);
+    }
+    
+    #resetBgColor {
+      background: rgba(255, 193, 7, 0.7);
+    }
+    
+    #resetBgColor:hover {
+      background: rgba(255, 193, 7, 0.9);
+    }
+    
+    #bgOpacitySlider {
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.3);
+      outline: none;
+    }
+    
+    #bgOpacitySlider::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #4ecdc4;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img id="vtuberImage" src="assets/vtuber-mouth-close.png" alt="VTuber">
+    <div class="status" id="status">點擊任何地方開始使用麥克風</div>
+    <div id="clickToStart" class="click-to-start">
+      <h2>🎤 點擊開始語音檢測</h2>
+      <p>VTuber準備好了！</p>
+    </div>
+    <canvas id="canvas" width="800" height="300" style="display: none;"></canvas>
+    <div class="controls" style="display: none;">
+      <button id="startMic">開始使用麥克風</button>
+      <button id="stopMic" disabled>停止麥克風</button>
+      <button id="testMic">測試麥克風設備</button>
+      <div class="volume-control">
+        <label for="volumeSlider">音量閾值: </label>
+        <input type="range" id="volumeSlider" min="0" max="100" value="5">
+        <span id="volumeValue">5</span>
+      </div>
+      
+      <div class="volume-control">
+        <label for="movingAverageSlider">平滑幀數: </label>
+        <input type="range" id="movingAverageSlider" min="1" max="30" value="10">
+        <span id="movingAverageValue">10</span>
+        <span style="color: rgba(255, 255, 255, 0.7); font-size: 12px; margin-left: 5px;">(幀)</span>
+      </div>
+      
+      <!-- 新增：背景設定介面 -->
+      <div class="training-section">
+        <h3 style="color: white; margin: 20px 0 10px 0;">🎨 VTuber 背景設定</h3>
+        <div class="bg-controls">
+          <div class="bg-control-row">
+            <label for="bgColorPicker" style="color: white; margin-right: 10px;">背景顏色：</label>
+            <input type="color" id="bgColorPicker" value="#000000" style="width: 50px; height: 35px; border: none; border-radius: 5px; cursor: pointer;">
+            <button id="resetBgColor" style="margin-left: 10px; padding: 8px 15px; font-size: 14px;">重置</button>
+          </div>
+          
+          <div class="bg-control-row">
+            <label style="color: white; margin-right: 10px;">背景樣式：</label>
+            <div class="bg-style-buttons">
+              <button class="bg-style-btn active" data-style="solid">純色</button>
+              <button class="bg-style-btn" data-style="gradient">漸層</button>
+              <button class="bg-style-btn" data-style="transparent">透明</button>
+            </div>
+          </div>
+          
+          <div class="bg-control-row" id="gradientControls" style="display: none;">
+            <label for="bgGradientColor" style="color: white; margin-right: 10px;">漸層顏色：</label>
+            <input type="color" id="bgGradientColor" value="#333333" style="width: 50px; height: 35px; border: none; border-radius: 5px; cursor: pointer;">
+          </div>
+          
+          <div class="bg-control-row">
+            <label for="bgOpacitySlider" style="color: white; margin-right: 10px;">不透明度：</label>
+            <input type="range" id="bgOpacitySlider" min="0" max="100" value="100" style="width: 120px;">
+            <span id="bgOpacityValue" style="color: white; margin-left: 10px; font-weight: bold;">100%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 新增：即時訓練介面 -->
+      <div class="training-section">
+        <h3 style="color: white; margin: 20px 0 10px 0;">🎯 即時訓練模式</h3>
+        <div class="training-controls">
+          <button id="toggleTraining">開始訓練模式</button>
+          <button id="clearTrainingData">清除訓練資料</button>
+          <button id="saveTrainingData">儲存訓練資料</button>
+          <button id="loadTrainingData">載入訓練資料</button>
+          <span id="trainingStatus" style="color: #4ecdc4; margin-left: 10px;">待機中</span>
+        </div>
+        
+        <div id="trainingInterface" style="display: none; margin-top: 15px;">
+          <p style="color: white; margin: 10px 0;">按住按鈕並發出對應聲音，放開按鈕完成錄音：</p>
+          <div class="mouth-buttons">
+            <button class="mouth-btn" data-mouth="a">A (啊)</button>
+            <button class="mouth-btn" data-mouth="e">E (欸)</button>
+            <button class="mouth-btn" data-mouth="i">I (咿)</button>
+            <button class="mouth-btn" data-mouth="o">O (喔)</button>
+            <button class="mouth-btn" data-mouth="u">U (嗚)</button>
+            <button class="mouth-btn" data-mouth="close">閉嘴</button>
+          </div>
+          <div style="color: white; margin-top: 10px; font-size: 14px;">
+            已訓練樣本：<span id="trainingCount">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser();
+    const vtuberImage = document.getElementById('vtuberImage');
+    const status = document.getElementById('status');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const volumeValue = document.getElementById('volumeValue');
+    const startMicBtn = document.getElementById('startMic');
+    const stopMicBtn = document.getElementById('stopMic');
+    const testMicBtn = document.getElementById('testMic');
+    
+    // 音量檢測相關變數
+    let volumeThreshold = 5; // 音量閾值，可以調整
+    let isRecording = false;
+    let mediaStream = null;
+    let source = null;
+    let animationId = null;
+    let keepAliveInterval = null; // 保持活躍的定時器
+    let currentMouthShape = 'close'; // 當前嘴型
+    let targetMouthShape = 'close'; // 目標嘴型
+    let lastMouthChangeTime = 0; // 上次換嘴型的時間
+    let mouthShapes = ['a', 'e', 'i', 'o', 'u']; // 可用的嘴型
+    let mouthShapeHistory = []; // 嘴型歷史，用於平滑過渡
+    let isTransitioning = false; // 是否正在過渡中
+    
+    // Moving Average 相關變數
+    let movingAverageFrames = 10; // 平均 frame 數量（可調整）
+    let volumeHistory = []; // 音量歷史緩衝區
+    let frequencyHistory = []; // 頻率資料歷史緩衝區
+    
+    // 眨眼相關變數
+    let lastBlinkTime = 0; // 上次眨眼時間
+    let isBlinking = false; // 是否正在眨眼
+    let blinkStartTime = 0; // 眨眼開始時間
+    let lastSoundTime = 0; // 上次有聲音的時間
+    let lastBlinkCheckTime = 0; // 上次檢查眨眼的時間
+    let nextBlinkCheckInterval = 1000; // 下次檢查眨眼的間隔時間
+    const BLINK_DURATION = 100; // 眨眼持續時間 (毫秒)
+    const BLINK_CHECK_MIN = 1000; // 眨眼檢查最小間隔 (毫秒)
+    const BLINK_CHECK_MAX = 2000; // 眨眼檢查最大間隔 (毫秒)
+    const BLINK_PROBABILITY = 0.3; // 眨眼機率 (30%)
+    
+    // 訓練系統變數
+    let isTrainingMode = false;
+    let trainingData = []; // 儲存訓練資料 {features: [], label: ''}
+    let currentAudioFeatures = null; // 當前音訊特徵
+    let isRecordingForTraining = false;
+    
+    // 按住錄音相關變數
+    let recordingBuffer = []; // 錄音緩衝區
+    let recordingStartTime = 0;
+    let currentRecordingButton = null;
+    let recordingTimer = null;
+    
+    // Moving Average 計算函數
+    function addToMovingAverage(history, newValue, maxLength) {
+      history.push(newValue);
+      if (history.length > maxLength) {
+        history.shift(); // 移除最舊的資料
+      }
+      return history;
+    }
+    
+    // 計算數值陣列的平均值
+    function calculateAverage(values) {
+      if (values.length === 0) return 0;
+      const sum = values.reduce((acc, val) => acc + val, 0);
+      return sum / values.length;
+    }
+    
+    // 計算頻率陣列的平均值（每個頻率 bin 分別計算）
+    function calculateFrequencyAverage(frequencyHistoryArray) {
+      if (frequencyHistoryArray.length === 0) return null;
+      
+      const binCount = frequencyHistoryArray[0].length;
+      const averagedFrequency = new Uint8Array(binCount);
+      
+      for (let bin = 0; bin < binCount; bin++) {
+        let sum = 0;
+        for (let frame = 0; frame < frequencyHistoryArray.length; frame++) {
+          sum += frequencyHistoryArray[frame][bin];
+        }
+        averagedFrequency[bin] = Math.round(sum / frequencyHistoryArray.length);
+      }
+      
+      return averagedFrequency;
+    }
+
+    // 滑桿控制事件
+    volumeSlider.addEventListener('input', function(e) {
+      volumeThreshold = parseInt(e.target.value);
+      volumeValue.textContent = volumeThreshold;
+    });
+    
+    // Moving Average 滑桿控制事件
+    const movingAverageSlider = document.getElementById('movingAverageSlider');
+    const movingAverageValue = document.getElementById('movingAverageValue');
+    
+    movingAverageSlider.addEventListener('input', function(e) {
+      const newFrameCount = parseInt(e.target.value);
+      movingAverageValue.textContent = newFrameCount;
+      
+      // 更新 frame 數量
+      movingAverageFrames = newFrameCount;
+      
+      // 清除現有的歷史緩衝區，避免不一致的狀態
+      volumeHistory = [];
+      frequencyHistory = [];
+      
+      console.log(`Moving Average 幀數已調整為: ${movingAverageFrames}`);
+    });
+    
+    // 預載入圖片
+    const mouthCloseImg = new Image();
+    const mouthOpenA = new Image();
+    const mouthOpenE = new Image();
+    const mouthOpenI = new Image();
+    const mouthOpenO = new Image();
+    const mouthOpenU = new Image();
+    const mouthBlinkImg = new Image(); // 眨眼圖片
+    
+    mouthCloseImg.src = 'assets/vtuber-mouth-close.png';
+    mouthOpenA.src = 'assets/vtuber-mouth-open-a.png';
+    mouthOpenE.src = 'assets/vtuber-mouth-open-e.png';
+    mouthOpenI.src = 'assets/vtuber-mouth-open-i.png';
+    mouthOpenO.src = 'assets/vtuber-mouth-open-o.png';
+    mouthOpenU.src = 'assets/vtuber-mouth-open-u.png';
+    mouthBlinkImg.src = 'assets/vtuber-mouth-close-blink.png';
+    
+    // 隨機選擇嘴型的函數
+    function getRandomMouthShape() {
+      const randomIndex = Math.floor(Math.random() * mouthShapes.length);
+      return mouthShapes[randomIndex];
+    }
+    
+    // 根據音量和頻率特徵決定嘴型的函數（智能版）
+    function decideMouthShape(volume, frequencyData) {
+      const currentTime = Date.now();
+      
+      if (volume <= volumeThreshold) {
+        targetMouthShape = 'close';
+        // 平滑過渡到閉嘴狀態
+        if (currentMouthShape !== 'close') {
+          smoothTransitionTo('close');
+        }
+        return currentMouthShape;
+      }
+      
+      // 提取當前音訊特徵
+      currentAudioFeatures = normalizeFeatures(extractAudioFeatures(frequencyData, volume));
+      
+      // 根據是否有訓練資料來決定嘴型
+      const suggestedMouthShape = trainingData.length >= 5 
+        ? predictMouthShapeFromTraining(currentAudioFeatures)
+        : analyzeFrequencyForMouthShape(frequencyData);
+      
+      // 添加到歷史記錄
+      mouthShapeHistory.push(suggestedMouthShape);
+      if (mouthShapeHistory.length > 5) {
+        mouthShapeHistory.shift(); // 保持最近5次的記錄
+      }
+      
+      // 根據歷史記錄決定最終嘴型（避免過於頻繁的變化）
+      const mostFrequentShape = getMostFrequentShape(mouthShapeHistory);
+      
+      // 當有聲音時，根據頻率特徵和歷史決定嘴型
+      const timeSinceLastChange = currentTime - lastMouthChangeTime;
+      const minChangeInterval = 120; // 最小變化間隔
+      
+      if (timeSinceLastChange > minChangeInterval && 
+          (mostFrequentShape !== currentMouthShape || currentMouthShape === 'close')) {
+        targetMouthShape = mostFrequentShape;
+        smoothTransitionTo(targetMouthShape);
+        lastMouthChangeTime = currentTime;
+      }
+      
+      return currentMouthShape;
+    }
+    
+    // 平滑過渡到目標嘴型
+    function smoothTransitionTo(targetShape) {
+      if (isTransitioning || currentMouthShape === targetShape) return;
+      
+      isTransitioning = true;
+      const startTime = Date.now();
+      const transitionDuration = 150; // 150ms 過渡時間
+      
+      function transition() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / transitionDuration, 1);
+        
+        if (progress >= 1) {
+          currentMouthShape = targetShape;
+          isTransitioning = false;
+          return;
+        }
+        
+        // 在過渡過程中可以添加中間狀態
+        requestAnimationFrame(transition);
+      }
+      
+      currentMouthShape = targetShape;
+      requestAnimationFrame(transition);
+    }
+    
+    // 獲取歷史記錄中最頻繁的嘴型
+    function getMostFrequentShape(history) {
+      if (history.length === 0) return 'a';
+      
+      const frequency = {};
+      history.forEach(shape => {
+        frequency[shape] = (frequency[shape] || 0) + 1;
+      });
+      
+      return Object.keys(frequency).reduce((a, b) => 
+        frequency[a] > frequency[b] ? a : b
+      );
+    }
+    
+    // 新增：基於頻率分析的嘴型識別
+    function analyzeFrequencyForMouthShape(frequencyData) {
+      // 計算不同頻率範圍的能量
+      const lowFreq = getFrequencyEnergy(frequencyData, 0, 300);    // 低頻 (a, o, u)
+      const midFreq = getFrequencyEnergy(frequencyData, 300, 2000); // 中頻 (e, o)
+      const highFreq = getFrequencyEnergy(frequencyData, 2000, 8000); // 高頻 (i, e)
+      
+      // 根據頻率特徵決定嘴型
+      const totalEnergy = lowFreq + midFreq + highFreq;
+      if (totalEnergy < 10) return getRandomMouthShape(); // 能量太低時使用隨機
+      
+      const lowRatio = lowFreq / totalEnergy;
+      const midRatio = midFreq / totalEnergy;
+      const highRatio = highFreq / totalEnergy;
+      
+      // 基於頻率比例決定嘴型
+      if (lowRatio > 0.4 && highRatio < 0.3) {
+        return Math.random() > 0.5 ? 'a' : 'o'; // 低頻主導：a 或 o
+      } else if (highRatio > 0.4) {
+        return Math.random() > 0.5 ? 'i' : 'e'; // 高頻主導：i 或 e
+      } else if (midRatio > 0.4) {
+        return Math.random() > 0.6 ? 'e' : (Math.random() > 0.5 ? 'o' : 'u'); // 中頻主導：e, o, u
+      } else {
+        return 'u'; // 平衡狀態：u
+      }
+    }
+    
+    // 計算特定頻率範圍的能量
+    function getFrequencyEnergy(frequencyData, minFreq, maxFreq) {
+      const sampleRate = audioCtx.sampleRate;
+      const fftSize = analyser.fftSize;
+      const frequencyBinCount = analyser.frequencyBinCount;
+      
+      const minBin = Math.floor(minFreq * fftSize / sampleRate);
+      const maxBin = Math.floor(maxFreq * fftSize / sampleRate);
+      
+      let energy = 0;
+      for (let i = minBin; i < Math.min(maxBin, frequencyBinCount); i++) {
+        energy += frequencyData[i] * frequencyData[i];
+      }
+      
+      return Math.sqrt(energy / (maxBin - minBin));
+    }
+    
+    // 提取音訊特徵向量（用於訓練）
+    function extractAudioFeatures(frequencyData, volume) {
+      const features = [];
+      
+      // 基本音量特徵
+      features.push(volume);
+      
+      // 頻率能量特徵（更詳細的分割）
+      const frequencyRanges = [
+        [0, 200],     // 超低頻
+        [200, 400],   // 低頻1
+        [400, 800],   // 低頻2
+        [800, 1600],  // 中低頻
+        [1600, 3200], // 中頻
+        [3200, 6400], // 中高頻
+        [6400, 12800] // 高頻
+      ];
+      
+      frequencyRanges.forEach(([min, max]) => {
+        features.push(getFrequencyEnergy(frequencyData, min, max));
+      });
+      
+      // 頻譜重心 (Spectral Centroid)
+      let weightedSum = 0;
+      let magnitudeSum = 0;
+      for (let i = 0; i < frequencyData.length; i++) {
+        const frequency = i * audioCtx.sampleRate / analyser.fftSize;
+        weightedSum += frequency * frequencyData[i];
+        magnitudeSum += frequencyData[i];
+      }
+      const spectralCentroid = magnitudeSum > 0 ? weightedSum / magnitudeSum : 0;
+      features.push(spectralCentroid);
+      
+      // 頻譜滾降點 (Spectral Rolloff)
+      const totalEnergy = frequencyData.reduce((sum, val) => sum + val, 0);
+      let runningSum = 0;
+      let rolloffIndex = 0;
+      for (let i = 0; i < frequencyData.length; i++) {
+        runningSum += frequencyData[i];
+        if (runningSum >= totalEnergy * 0.85) {
+          rolloffIndex = i;
+          break;
+        }
+      }
+      const rolloffFreq = rolloffIndex * audioCtx.sampleRate / analyser.fftSize;
+      features.push(rolloffFreq);
+      
+      return features;
+    }
+    
+    // 使用訓練資料預測嘴型（簡單的 k-NN 分類器）
+    function predictMouthShapeFromTraining(features) {
+      if (trainingData.length < 5) {
+        return analyzeFrequencyForMouthShape(features); // 回退到原始方法
+      }
+      
+      // 計算與所有訓練樣本的距離
+      const distances = trainingData.map(sample => {
+        const distance = euclideanDistance(features, sample.features);
+        return { distance, label: sample.label };
+      });
+      
+      // 按距離排序，取最近的 k 個樣本
+      const k = Math.min(5, trainingData.length);
+      distances.sort((a, b) => a.distance - b.distance);
+      const nearestNeighbors = distances.slice(0, k);
+      
+      // 投票決定最終標籤
+      const votes = {};
+      nearestNeighbors.forEach(neighbor => {
+        votes[neighbor.label] = (votes[neighbor.label] || 0) + 1;
+      });
+      
+      // 返回得票最多的標籤
+      return Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
+    }
+    
+    // 計算歐幾里得距離
+    function euclideanDistance(features1, features2) {
+      if (features1.length !== features2.length) return Infinity;
+      
+      let sum = 0;
+      for (let i = 0; i < features1.length; i++) {
+        const diff = features1[i] - features2[i];
+        sum += diff * diff;
+      }
+      return Math.sqrt(sum);
+    }
+    
+    // 正規化特徵向量
+    function normalizeFeatures(features) {
+      const max = Math.max(...features);
+      const min = Math.min(...features);
+      const range = max - min;
+      
+      if (range === 0) return features;
+      
+      return features.map(f => (f - min) / range);
+    }
+    
+    // 生成隨機的眨眼檢查間隔時間
+    function generateNextBlinkCheckInterval() {
+      return Math.random() * (BLINK_CHECK_MAX - BLINK_CHECK_MIN) + BLINK_CHECK_MIN;
+    }
+    
+    // 眨眼邏輯函數
+    function checkAndTriggerBlink(currentTime, volume) {
+      // 如果正在眨眼，檢查是否該結束
+      if (isBlinking) {
+        if (currentTime - blinkStartTime >= BLINK_DURATION) {
+          isBlinking = false;
+          console.log('眨眼結束');
+        }
+        return true; // 仍在眨眼中
+      }
+      
+      // 記錄有聲音的時間，並重置檢查計時器
+      if (volume > volumeThreshold) {
+        lastSoundTime = currentTime;
+        lastBlinkCheckTime = currentTime; // 重置檢查時間
+        nextBlinkCheckInterval = generateNextBlinkCheckInterval(); // 生成新的檢查間隔
+        return false; // 有聲音時不眨眼
+      }
+      
+      // 檢查是否到了該檢查眨眼的時間
+      const timeSinceLastCheck = currentTime - lastBlinkCheckTime;
+      if (timeSinceLastCheck < nextBlinkCheckInterval) {
+        return false; // 還沒到檢查時間
+      }
+      
+      // 到了檢查時間，更新檢查時間並生成下次檢查間隔
+      lastBlinkCheckTime = currentTime;
+      nextBlinkCheckInterval = generateNextBlinkCheckInterval();
+      
+      // 檢查是否在安靜狀態（至少安靜500ms才考慮眨眼）
+      const quietDuration = currentTime - lastSoundTime;
+      if (quietDuration < 500) {
+        console.log(`安靜時間不夠: ${quietDuration}ms，下次檢查間隔: ${nextBlinkCheckInterval}ms`);
+        return false;
+      }
+      
+      // 30%機率觸發眨眼
+      if (Math.random() < BLINK_PROBABILITY) {
+        isBlinking = true;
+        blinkStartTime = currentTime;
+        lastBlinkTime = currentTime;
+        console.log(`觸發眨眼！安靜時間: ${quietDuration}ms，下次檢查間隔: ${nextBlinkCheckInterval}ms`);
+        return true;
+      } else {
+        console.log(`未觸發眨眼，安靜時間: ${quietDuration}ms，下次檢查間隔: ${nextBlinkCheckInterval}ms`);
+      }
+      
+      return false;
+    }
+    
+    // 更新 VTuber 嘴型的函數（加入眨眼支持）
+    function updateMouthShape(vowel, volume) {
+      const currentTime = Date.now();
+      
+      // 檢查是否需要眨眼
+      const shouldBlink = checkAndTriggerBlink(currentTime, volume);
+      
+      let imageSrc = 'assets/vtuber-mouth-close.png';
+      let transform = 'scaleX(-1)';
+      
+      // 如果正在眨眼，使用眨眼圖片
+      if (shouldBlink) {
+        imageSrc = 'assets/vtuber-mouth-close-blink.png';
+        transform = 'scaleX(-1)';
+      } else if (volume > volumeThreshold) {
+        // 有聲音時根據嘴型選擇圖片
+        switch (vowel) {
+          case 'a':
+            imageSrc = 'assets/vtuber-mouth-open-a.png';
+            transform = 'scaleX(-1) scale(1.05)';
+            break;
+          case 'e':
+            imageSrc = 'assets/vtuber-mouth-open-e.png';
+            transform = 'scaleX(-1) scale(1.03)';
+            break;
+          case 'i':
+            imageSrc = 'assets/vtuber-mouth-open-i.png';
+            transform = 'scaleX(-1) scale(1.02)';
+            break;
+          case 'o':
+            imageSrc = 'assets/vtuber-mouth-open-o.png';
+            transform = 'scaleX(-1) scale(1.04)';
+            break;
+          case 'u':
+            imageSrc = 'assets/vtuber-mouth-open-u.png';
+            transform = 'scaleX(-1) scale(1.03)';
+            break;
+          default:
+            imageSrc = 'assets/vtuber-mouth-open.png';
+            transform = 'scaleX(-1) scale(1.05)';
+            break;
+        }
+      }
+      // 安靜時保持閉嘴狀態（已設定為預設值）
+      
+      vtuberImage.src = imageSrc;
+      vtuberImage.style.transform = transform;
+    }
+    
+    // 自動啟動麥克風的函數
+    async function autoStartMicrophone() {
+      // 隱藏點擊提示，顯示控制項
+      document.getElementById('clickToStart').style.display = 'none';
+      document.getElementById('canvas').style.display = 'block';
+      document.querySelector('.controls').style.display = 'flex';
+      
+      // 模擬點擊開始麥克風按鈕
+      startMicBtn.click();
+    }
+
+    // 開始使用麥克風
+    startMicBtn.addEventListener('click', async function() {
+      try {
+        status.textContent = '正在請求麥克風權限...';
+        
+        // 檢查瀏覽器是否支援getUserMedia
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('您的瀏覽器不支援麥克風功能');
+        }
+        
+        // 需要使用者互動來啟動AudioContext
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
+        
+        // 請求麥克風權限 - 使用獨占模式避免衝突
+        mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+            sampleRate: 44100,
+            channelCount: 1,
+            latency: 0.01
+          } 
+        });
+        
+        console.log('麥克風串流已建立:', mediaStream);
+        
+        // 建立音訊來源
+        source = audioCtx.createMediaStreamSource(mediaStream);
+        source.connect(analyser);
+        
+        console.log('音訊來源已連接到分析器');
+        
+        isRecording = true;
+        status.textContent = '🎤 麥克風已開啟，開始監聽... (請說話測試)';
+        
+                 // 初始化眨眼相關變數
+         const currentTime = Date.now();
+         lastSoundTime = currentTime;
+         lastBlinkTime = 0;
+         isBlinking = false;
+         lastBlinkCheckTime = currentTime;
+         nextBlinkCheckInterval = generateNextBlinkCheckInterval();
+         
+         // 清除 moving average 緩衝區
+         volumeHistory = [];
+         frequencyHistory = [];
+        
+        // 更新按鈕狀態
+        startMicBtn.disabled = true;
+        stopMicBtn.disabled = false;
+        
+        // 設定分析器
+        analyser.fftSize = 2048;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        const frequencyData = new Uint8Array(bufferLength);
+        
+        let noAudioCount = 0;
+        let lastVolumeTime = Date.now();
+        
+        function draw() {
+          if (!isRecording) return;
+          
+          // 確保音訊上下文始終處於運行狀態
+          if (audioCtx.state === 'suspended') {
+            console.log('音訊上下文暫停，正在恢復...');
+            audioCtx.resume().then(() => {
+              console.log('音訊上下文已恢復');
+            }).catch(err => {
+              console.error('無法恢復音訊上下文:', err);
+            });
+          }
+          
+          // 檢查音訊串流是否仍然活躍
+          if (mediaStream && mediaStream.getTracks().length > 0) {
+            const track = mediaStream.getTracks()[0];
+            if (track.readyState === 'ended') {
+              console.warn('音訊軌道已結束，嘗試重新連接...');
+              status.textContent = '🔄 麥克風連線中斷，正在重新連接...';
+              // 立即嘗試重新啟動麥克風
+              setTimeout(() => {
+                if (isRecording) {
+                  stopMicrophone();
+                  setTimeout(() => startMicBtn.click(), 500);
+                }
+              }, 100);
+              return;
+            }
+          }
+          
+          animationId = requestAnimationFrame(draw);
+          analyser.getByteTimeDomainData(dataArray);
+          analyser.getByteFrequencyData(frequencyData);
+          
+          // 計算音量（RMS）- 使用更敏感的算法
+          let sum = 0;
+          let maxAmplitude = 0;
+          for (let i = 0; i < bufferLength; i++) {
+            const amplitude = Math.abs((dataArray[i] - 128) / 128);
+            sum += amplitude * amplitude;
+            maxAmplitude = Math.max(maxAmplitude, amplitude);
+          }
+          const rmsVolume = Math.sqrt(sum / bufferLength) * 100;
+          const peakVolume = maxAmplitude * 100;
+          
+          // 使用峰值和RMS的組合來獲得更好的響應
+          const instantVolume = Math.max(rmsVolume, peakVolume * 0.3);
+          
+          // 添加到 moving average 緩衝區
+          addToMovingAverage(volumeHistory, instantVolume, movingAverageFrames);
+          addToMovingAverage(frequencyHistory, Array.from(frequencyData), movingAverageFrames);
+          
+          // 計算平滑後的音量和頻率資料
+          const volume = calculateAverage(volumeHistory);
+          const smoothedFrequencyData = calculateFrequencyAverage(frequencyHistory) || frequencyData;
+          
+          // 簡化的調試資訊
+          if (Math.random() < 0.02) { // 每50幀輸出一次調試資訊
+            console.log('🎤 音量:', volume.toFixed(1), '閾值:', volumeThreshold, '當前嘴型:', currentMouthShape);
+          }
+          
+          // 決定嘴型並更新（使用平滑化後的資料）
+          const mouthShape = decideMouthShape(volume, smoothedFrequencyData);
+          updateMouthShape(mouthShape, volume);
+          
+          // 更新狀態顯示
+          const mouthDisplay = mouthShape === 'close' ? '閉嘴' : `嘴型: ${mouthShape.toUpperCase()}`;
+          status.textContent = `🎤 即時音量: ${instantVolume.toFixed(1)} | 平滑音量: ${volume.toFixed(1)} (${movingAverageFrames}幀) | ${mouthDisplay} ${volume > volumeThreshold ? '(說話中)' : '(安靜)'}`;
+
+          // 繪製波形圖
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // 繪製時域波形
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = volume > volumeThreshold ? '#ff6b6b' : '#4ecdc4';
+          ctx.beginPath();
+
+          let sliceWidth = canvas.width * 1.0 / bufferLength;
+          let x = 0;
+
+          for (let i = 0; i < bufferLength; i++) {
+            let v = dataArray[i] / 128.0;
+            let y = v * canvas.height / 2;
+
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+
+            x += sliceWidth;
+          }
+
+          ctx.lineTo(canvas.width, canvas.height / 2);
+          ctx.stroke();
+          
+          // 繪製頻譜分析
+          ctx.fillStyle = volume > volumeThreshold ? 'rgba(255, 107, 107, 0.6)' : 'rgba(78, 205, 196, 0.6)';
+          const barWidth = canvas.width / bufferLength * 2;
+          let barHeight;
+          x = 0;
+
+          for (let i = 0; i < bufferLength / 2; i++) {
+            barHeight = (frequencyData[i] / 255) * canvas.height * 0.3;
+            ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+            x += barWidth + 1;
+          }
+        }
+        
+        draw();
+        
+        // 啟動保持活躍的定時器，確保即使在背景模式下也能持續運作
+        keepAliveInterval = setInterval(() => {
+          if (isRecording && audioCtx.state === 'suspended') {
+            console.log('定時器檢查：音訊上下文暫停，正在恢復...');
+            audioCtx.resume().catch(err => {
+              console.error('定時器恢復音訊上下文失敗:', err);
+            });
+          }
+          // 強制觸發一次音訊處理以保持活躍
+          if (isRecording && analyser) {
+            const tempData = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteTimeDomainData(tempData);
+          }
+        }, 1000); // 每秒檢查一次
+        
+      } catch (error) {
+        console.error('無法存取麥克風:', error);
+        let errorMessage = '❌ 無法存取麥克風：';
+        
+        if (error.name === 'NotAllowedError') {
+          errorMessage += '權限被拒絕，請允許麥克風權限';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage += '找不到麥克風設備';
+        } else if (error.name === 'NotSupportedError') {
+          errorMessage += '瀏覽器不支援此功能';
+        } else if (error.name === 'NotReadableError') {
+          errorMessage += '麥克風被其他應用程式占用';
+        } else {
+          errorMessage += error.message || '未知錯誤';
+        }
+        
+        status.textContent = errorMessage;
+        
+        // 重置按鈕狀態
+        startMicBtn.disabled = false;
+        stopMicBtn.disabled = true;
+      }
+    });
+    
+    // 停止麥克風
+    function stopMicrophone() {
+      if (mediaStream) {
+        // 停止所有音訊軌道
+        mediaStream.getTracks().forEach(track => {
+          track.stop();
+          console.log('音訊軌道已停止:', track.label);
+        });
+        mediaStream = null;
+      }
+      
+      if (source) {
+        source.disconnect();
+        source = null;
+      }
+      
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      
+      if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+        keepAliveInterval = null;
+      }
+      
+      isRecording = false;
+      status.textContent = '麥克風已停止，點擊「開始使用麥克風」重新開始';
+      
+      // 重置嘴型狀態
+      currentMouthShape = 'close';
+      lastMouthChangeTime = 0;
+      vtuberImage.src = 'assets/vtuber-mouth-close.png';
+      vtuberImage.style.transform = 'scaleX(-1)';
+      
+      // 重置眨眼狀態
+      isBlinking = false;
+      lastBlinkTime = 0;
+      lastSoundTime = 0;
+      lastBlinkCheckTime = 0;
+      nextBlinkCheckInterval = 1000;
+      
+      // 清除 moving average 緩衝區
+      volumeHistory = [];
+      frequencyHistory = [];
+      
+      // 更新按鈕狀態
+      startMicBtn.disabled = false;
+      stopMicBtn.disabled = true;
+      
+      // 清空畫布
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    stopMicBtn.addEventListener('click', stopMicrophone);
+    
+    // 防止頁面在失去焦點時暫停音訊處理
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        console.log('頁面隱藏，但音訊處理繼續運行');
+        // 不暫停任何音訊處理
+      } else {
+        console.log('頁面重新可見');
+        // 確保音訊上下文處於運行狀態
+        if (audioCtx.state === 'suspended' && isRecording) {
+          audioCtx.resume();
+        }
+      }
+    });
+    
+    // 防止窗口失去焦點時暫停
+    window.addEventListener('blur', function() {
+      console.log('窗口失去焦點，但音訊處理繼續');
+      // 確保音訊上下文不會暫停
+      if (audioCtx.state === 'suspended' && isRecording) {
+        audioCtx.resume();
+      }
+    });
+    
+    window.addEventListener('focus', function() {
+      console.log('窗口重新獲得焦點');
+      // 確保音訊上下文處於運行狀態
+      if (audioCtx.state === 'suspended' && isRecording) {
+        audioCtx.resume();
+      }
+    });
+    
+    // 測試麥克風功能
+    testMicBtn.addEventListener('click', async function() {
+      try {
+        status.textContent = '正在檢測麥克風設備...';
+        
+        // 列出所有音訊輸入設備
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioInputs = devices.filter(device => device.kind === 'audioinput');
+        
+        console.log('找到的音訊輸入設備:', audioInputs);
+        
+        if (audioInputs.length === 0) {
+          status.textContent = '❌ 找不到任何麥克風設備';
+          return;
+        }
+        
+        // 測試預設麥克風
+        const testStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log('麥克風測試成功:', testStream);
+        
+        // 立即停止測試串流
+        testStream.getTracks().forEach(track => track.stop());
+        
+        status.textContent = `✅ 麥克風測試成功！找到 ${audioInputs.length} 個音訊設備，現在可以開始使用麥克風`;
+        
+      } catch (error) {
+        console.error('麥克風測試失敗:', error);
+        status.textContent = `❌ 麥克風測試失敗: ${error.message}`;
+      }
+    });
+    
+    // 添加音量閾值調整功能
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowUp') {
+        volumeThreshold = Math.min(100, volumeThreshold + 5);
+        console.log('音量閾值:', volumeThreshold);
+      } else if (e.key === 'ArrowDown') {
+        volumeThreshold = Math.max(0, volumeThreshold - 5);
+        console.log('音量閾值:', volumeThreshold);
+      }
+    });
+    
+    // 點擊任何地方開始錄音
+    document.addEventListener('click', function(e) {
+      if (document.getElementById('clickToStart').style.display !== 'none') {
+        autoStartMicrophone();
+      }
+    }, { once: true }); // 只執行一次
+    
+    // 應用啟動時自動載入訓練資料和背景設定
+    window.addEventListener('load', function() {
+      // 載入訓練資料
+      if (loadTrainingDataFromLocal()) {
+        console.log(`自動載入了 ${trainingData.length} 個訓練樣本`);
+        const trainingStatus = document.getElementById('trainingStatus');
+        if (trainingStatus && trainingData.length > 0) {
+          trainingStatus.textContent = `已載入 ${trainingData.length} 個訓練樣本`;
+          trainingStatus.style.color = '#4CAF50';
+        }
+      }
+      
+      // 初始化背景設定
+      initializeBackgroundSettings();
+    });
+    
+    // 也可以按空白鍵開始
+    document.addEventListener('keydown', function(e) {
+      if (e.code === 'Space' && document.getElementById('clickToStart').style.display !== 'none') {
+        e.preventDefault();
+        autoStartMicrophone();
+      }
+    }, { once: true });
+    
+    // 訓練系統事件處理器
+    document.getElementById('toggleTraining').addEventListener('click', function() {
+      isTrainingMode = !isTrainingMode;
+      const trainingInterface = document.getElementById('trainingInterface');
+      const trainingStatus = document.getElementById('trainingStatus');
+      const toggleBtn = document.getElementById('toggleTraining');
+      
+      if (isTrainingMode) {
+        trainingInterface.style.display = 'block';
+        trainingStatus.textContent = '訓練模式啟用 - 按住按鈕並發聲';
+        trainingStatus.style.color = '#ff6b6b';
+        toggleBtn.textContent = '結束訓練模式';
+        toggleBtn.classList.add('training-active');
+      } else {
+        trainingInterface.style.display = 'none';
+        trainingStatus.textContent = '訓練模式關閉';
+        trainingStatus.style.color = '#4ecdc4';
+        toggleBtn.textContent = '開始訓練模式';
+        toggleBtn.classList.remove('training-active');
+      }
+    });
+    
+    // 清除訓練資料
+    document.getElementById('clearTrainingData').addEventListener('click', function() {
+      if (confirm('確定要清除所有訓練資料嗎？')) {
+        trainingData = [];
+        updateTrainingCount();
+        localStorage.removeItem('vtuberTrainingData'); // 同時清除本地儲存
+        console.log('訓練資料已清除');
+      }
+    });
+    
+    // 儲存訓練資料
+    document.getElementById('saveTrainingData').addEventListener('click', function() {
+      if (trainingData.length === 0) {
+        alert('沒有訓練資料可以儲存！');
+        return;
+      }
+      
+      // 顯示選項：本地儲存或檔案匯出
+      const choice = confirm('點擊「確定」儲存到瀏覽器本地儲存\n點擊「取消」下載為檔案');
+      
+      if (choice) {
+        // 儲存到本地儲存
+        if (saveTrainingDataToLocal()) {
+          alert(`成功儲存 ${trainingData.length} 個訓練樣本到本地！`);
+        } else {
+          alert('儲存失敗，請稍後再試！');
+        }
+      } else {
+        // 匯出為檔案
+        if (exportTrainingData()) {
+          alert('訓練資料已下載為檔案！');
+        } else {
+          alert('匯出失敗，請稍後再試！');
+        }
+      }
+    });
+    
+    // 載入訓練資料
+    document.getElementById('loadTrainingData').addEventListener('click', function() {
+      // 顯示選項：本地載入或檔案匯入
+      const choice = confirm('點擊「確定」從瀏覽器本地儲存載入\n點擊「取消」從檔案匯入');
+      
+      if (choice) {
+        // 從本地儲存載入
+        if (loadTrainingDataFromLocal()) {
+          alert(`成功載入 ${trainingData.length} 個訓練樣本！`);
+        } else {
+          alert('沒有找到本地儲存的訓練資料！');
+        }
+      } else {
+        // 從檔案匯入
+        importTrainingData();
+      }
+    });
+    
+    // 嘴型按鈕事件 - 改為按住錄音模式
+    document.querySelectorAll('.mouth-btn').forEach(btn => {
+      // 按下開始錄音
+      btn.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        if (!isTrainingMode) {
+          alert('請先啟用訓練模式！');
+          return;
+        }
+        
+        const mouthType = this.getAttribute('data-mouth');
+        startRecording(this, mouthType);
+      });
+      
+      // 放開停止錄音
+      btn.addEventListener('mouseup', function(e) {
+        e.preventDefault();
+        stopRecording();
+      });
+      
+      // 滑鼠離開也停止錄音
+      btn.addEventListener('mouseleave', function(e) {
+        if (currentRecordingButton === this) {
+          stopRecording();
+        }
+      });
+      
+      // 支援觸控設備
+      btn.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        if (!isTrainingMode) {
+          alert('請先啟用訓練模式！');
+          return;
+        }
+        
+        const mouthType = this.getAttribute('data-mouth');
+        startRecording(this, mouthType);
+      });
+      
+      btn.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        stopRecording();
+      });
+    });
+    
+    // 開始錄音
+    function startRecording(button, mouthType) {
+      if (currentRecordingButton) return; // 防止重複錄音
+      
+      currentRecordingButton = button;
+      recordingBuffer = [];
+      recordingStartTime = Date.now();
+      
+      // 視覺回饋
+      button.classList.add('pressed');
+      button.textContent = `🔴 錄音中...`;
+      
+      // 開始收集音訊資料
+      recordingTimer = setInterval(() => {
+        if (currentAudioFeatures) {
+          recordingBuffer.push([...currentAudioFeatures]);
+        }
+      }, 50); // 每 50ms 收集一次
+      
+      console.log(`開始錄音: ${mouthType}`);
+    }
+
+    // 停止錄音
+    function stopRecording() {
+      if (!currentRecordingButton) return;
+      
+      const mouthType = currentRecordingButton.getAttribute('data-mouth');
+      const recordingDuration = Date.now() - recordingStartTime;
+      
+      // 清除定時器
+      if (recordingTimer) {
+        clearInterval(recordingTimer);
+        recordingTimer = null;
+      }
+      
+      // 恢復按鈕狀態
+      currentRecordingButton.classList.remove('pressed');
+      const originalText = {
+        'a': 'A (啊)',
+        'e': 'E (欸)', 
+        'i': 'I (咿)',
+        'o': 'O (喔)',
+        'u': 'U (嗚)',
+        'close': '閉嘴'
+      };
+      currentRecordingButton.textContent = originalText[mouthType];
+      
+      // 處理錄音資料
+      if (recordingBuffer.length > 0 && recordingDuration >= 200) {
+        // 計算平均特徵
+        const avgFeatures = calculateAverageFeatures(recordingBuffer);
+        
+        // 添加訓練資料
+        trainingData.push({
+          features: avgFeatures,
+          label: mouthType,
+          duration: recordingDuration,
+          samples: recordingBuffer.length
+        });
+        
+        updateTrainingCount();
+        autoSaveTrainingData();
+        
+        console.log(`錄音完成: ${mouthType}, 時長: ${recordingDuration}ms, 樣本數: ${recordingBuffer.length}`);
+        
+        // 成功回饋
+        currentRecordingButton.classList.add('recording');
+        setTimeout(() => {
+          currentRecordingButton.classList.remove('recording');
+        }, 500);
+        
+      } else {
+        console.log('錄音時間太短或沒有音訊資料');
+        alert('錄音時間太短！請按住按鈕至少 0.2 秒並發出聲音。');
+      }
+      
+      currentRecordingButton = null;
+      recordingBuffer = [];
+    }
+
+    // 計算平均特徵
+    function calculateAverageFeatures(buffer) {
+      if (buffer.length === 0) return [];
+      
+      const featureCount = buffer[0].length;
+      const avgFeatures = new Array(featureCount).fill(0);
+      
+      // 計算每個特徵的平均值
+      buffer.forEach(features => {
+        features.forEach((value, index) => {
+          avgFeatures[index] += value;
+        });
+      });
+      
+      return avgFeatures.map(sum => sum / buffer.length);
+    }
+    
+    // 更新訓練計數顯示
+    function updateTrainingCount() {
+      const countElement = document.getElementById('trainingCount');
+      if (countElement) {
+        countElement.textContent = trainingData.length;
+        
+        // 顯示各嘴型的樣本數量
+        const counts = {};
+        trainingData.forEach(sample => {
+          counts[sample.label] = (counts[sample.label] || 0) + 1;
+        });
+        
+        const breakdown = Object.keys(counts)
+          .map(label => `${label}:${counts[label]}`)
+          .join(', ');
+        
+        countElement.title = breakdown || '無資料';
+      }
+    }
+    
+    // 儲存訓練資料到本地儲存
+    function saveTrainingDataToLocal() {
+      try {
+        const dataToSave = {
+          version: '1.0',
+          timestamp: new Date().toISOString(),
+          trainingData: trainingData,
+          totalSamples: trainingData.length
+        };
+        
+        localStorage.setItem('vtuberTrainingData', JSON.stringify(dataToSave));
+        return true;
+      } catch (error) {
+        console.error('儲存訓練資料失敗:', error);
+        return false;
+      }
+    }
+    
+    // 從本地儲存載入訓練資料
+    function loadTrainingDataFromLocal() {
+      try {
+        const savedData = localStorage.getItem('vtuberTrainingData');
+        if (savedData) {
+          const parsedData = JSON.parse(savedData);
+          if (parsedData.version && parsedData.trainingData) {
+            trainingData = parsedData.trainingData;
+            updateTrainingCount();
+            return true;
+          }
+        }
+        return false;
+      } catch (error) {
+        console.error('載入訓練資料失敗:', error);
+        return false;
+      }
+    }
+    
+    // 匯出訓練資料為檔案
+    function exportTrainingData() {
+      try {
+        const dataToExport = {
+          version: '1.0',
+          timestamp: new Date().toISOString(),
+          trainingData: trainingData,
+          totalSamples: trainingData.length,
+          description: 'VTuber語音訓練資料'
+        };
+        
+        const jsonString = JSON.stringify(dataToExport, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `vtuber_training_data_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        return true;
+      } catch (error) {
+        console.error('匯出訓練資料失敗:', error);
+        return false;
+      }
+    }
+    
+    // 匯入訓練資料檔案
+    function importTrainingData() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      
+      input.onchange = function(event) {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              const importedData = JSON.parse(e.target.result);
+              if (importedData.version && importedData.trainingData) {
+                if (confirm(`確定要載入 ${importedData.totalSamples} 個訓練樣本嗎？這會覆蓋現有的訓練資料。`)) {
+                  trainingData = importedData.trainingData;
+                  updateTrainingCount();
+                  saveTrainingDataToLocal(); // 自動儲存到本地
+                  alert('訓練資料載入成功！');
+                }
+              } else {
+                alert('無效的訓練資料檔案格式！');
+              }
+            } catch (error) {
+              console.error('匯入訓練資料失敗:', error);
+              alert('匯入失敗：檔案格式錯誤！');
+            }
+          };
+          reader.readAsText(file);
+        }
+      };
+      
+      input.click();
+    }
+    
+    // 自動儲存訓練資料
+    function autoSaveTrainingData() {
+      if (trainingData.length > 0) {
+        saveTrainingDataToLocal();
+        console.log('訓練資料已自動儲存');
+      }
+    }
+    
+    // 背景設定相關變數
+    let currentBgStyle = 'solid';
+    let currentBgColor = '#000000';
+    let currentBgGradientColor = '#333333';
+    let currentBgOpacity = 100;
+    
+    // 初始化背景設定
+    function initializeBackgroundSettings() {
+      const bgColorPicker = document.getElementById('bgColorPicker');
+      const bgGradientColor = document.getElementById('bgGradientColor');
+      const bgOpacitySlider = document.getElementById('bgOpacitySlider');
+      const bgOpacityValue = document.getElementById('bgOpacityValue');
+      const resetBgColor = document.getElementById('resetBgColor');
+      const bgStyleButtons = document.querySelectorAll('.bg-style-btn');
+      const gradientControls = document.getElementById('gradientControls');
+      
+      // 載入儲存的設定
+      loadBackgroundSettings();
+      
+      // 顏色選擇器事件
+      bgColorPicker.addEventListener('change', function(e) {
+        currentBgColor = e.target.value;
+        updateVTuberBackground();
+        saveBackgroundSettings();
+      });
+      
+      // 漸層顏色選擇器事件
+      bgGradientColor.addEventListener('change', function(e) {
+        currentBgGradientColor = e.target.value;
+        if (currentBgStyle === 'gradient') {
+          updateVTuberBackground();
+          saveBackgroundSettings();
+        }
+      });
+      
+      // 不透明度滑桿事件
+      bgOpacitySlider.addEventListener('input', function(e) {
+        currentBgOpacity = parseInt(e.target.value);
+        bgOpacityValue.textContent = currentBgOpacity + '%';
+        updateVTuberBackground();
+        saveBackgroundSettings();
+      });
+      
+      // 重置按鈕事件
+      resetBgColor.addEventListener('click', function() {
+        currentBgColor = '#000000';
+        currentBgGradientColor = '#333333';
+        currentBgOpacity = 100;
+        currentBgStyle = 'solid';
+        
+        bgColorPicker.value = currentBgColor;
+        bgGradientColor.value = currentBgGradientColor;
+        bgOpacitySlider.value = currentBgOpacity;
+        bgOpacityValue.textContent = currentBgOpacity + '%';
+        
+        // 更新樣式按鈕
+        bgStyleButtons.forEach(btn => btn.classList.remove('active'));
+        document.querySelector('[data-style="solid"]').classList.add('active');
+        gradientControls.style.display = 'none';
+        
+        updateVTuberBackground();
+        saveBackgroundSettings();
+      });
+      
+      // 背景樣式按鈕事件
+      bgStyleButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          bgStyleButtons.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          
+          currentBgStyle = this.getAttribute('data-style');
+          
+          // 顯示或隱藏漸層控制項
+          if (currentBgStyle === 'gradient') {
+            gradientControls.style.display = 'flex';
+          } else {
+            gradientControls.style.display = 'none';
+          }
+          
+          updateVTuberBackground();
+          saveBackgroundSettings();
+        });
+      });
+      
+      // 初始化背景
+      updateVTuberBackground();
+    }
+    
+    // 更新 VTuber 背景
+    function updateVTuberBackground() {
+      const vtuberImage = document.getElementById('vtuberImage');
+      const opacity = currentBgOpacity / 100;
+      
+      let background;
+      
+      switch (currentBgStyle) {
+        case 'solid':
+          background = currentBgColor;
+          break;
+        case 'gradient':
+          background = `linear-gradient(135deg, ${currentBgColor}, ${currentBgGradientColor})`;
+          break;
+        case 'transparent':
+          background = 'transparent';
+          break;
+        default:
+          background = currentBgColor;
+      }
+      
+      // 如果是透明模式，忽略不透明度設定
+      if (currentBgStyle === 'transparent') {
+        vtuberImage.style.background = background;
+      } else {
+        // 將不透明度應用到背景
+        if (currentBgStyle === 'solid') {
+          const rgb = hexToRgb(currentBgColor);
+          if (rgb) {
+            background = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
+          }
+        } else if (currentBgStyle === 'gradient') {
+          const rgb1 = hexToRgb(currentBgColor);
+          const rgb2 = hexToRgb(currentBgGradientColor);
+          if (rgb1 && rgb2) {
+            background = `linear-gradient(135deg, rgba(${rgb1.r}, ${rgb1.g}, ${rgb1.b}, ${opacity}), rgba(${rgb2.r}, ${rgb2.g}, ${rgb2.b}, ${opacity}))`;
+          }
+        }
+        vtuberImage.style.background = background;
+      }
+      
+      console.log('背景已更新:', background);
+    }
+    
+    // 將 hex 顏色轉換為 RGB
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    }
+    
+    // 儲存背景設定
+    function saveBackgroundSettings() {
+      try {
+        const settings = {
+          style: currentBgStyle,
+          color: currentBgColor,
+          gradientColor: currentBgGradientColor,
+          opacity: currentBgOpacity
+        };
+        localStorage.setItem('vtuberBackgroundSettings', JSON.stringify(settings));
+      } catch (error) {
+        console.error('儲存背景設定失敗:', error);
+      }
+    }
+    
+    // 載入背景設定
+    function loadBackgroundSettings() {
+      try {
+        const saved = localStorage.getItem('vtuberBackgroundSettings');
+        if (saved) {
+          const settings = JSON.parse(saved);
+          currentBgStyle = settings.style || 'solid';
+          currentBgColor = settings.color || '#000000';
+          currentBgGradientColor = settings.gradientColor || '#333333';
+          currentBgOpacity = settings.opacity || 100;
+          
+          // 更新 UI
+          document.getElementById('bgColorPicker').value = currentBgColor;
+          document.getElementById('bgGradientColor').value = currentBgGradientColor;
+          document.getElementById('bgOpacitySlider').value = currentBgOpacity;
+          document.getElementById('bgOpacityValue').textContent = currentBgOpacity + '%';
+          
+          // 更新樣式按鈕
+          document.querySelectorAll('.bg-style-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.getAttribute('data-style') === currentBgStyle) {
+              btn.classList.add('active');
+            }
+          });
+          
+          // 顯示或隱藏漸層控制項
+          const gradientControls = document.getElementById('gradientControls');
+          if (currentBgStyle === 'gradient') {
+            gradientControls.style.display = 'flex';
+          } else {
+            gradientControls.style.display = 'none';
+          }
+        }
+      } catch (error) {
+        console.error('載入背景設定失敗:', error);
+      }
+    }
+  </script>
+</body>
+</html>
